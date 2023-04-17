@@ -17,7 +17,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from common.constant import USER_AGENTS, country
 from common.mongodb import mongo_collection
 from common.util import cbk, unzip
-# from common.venuserye import get_ipinfo_from_enuseye
+from common.linux_venuserye import get_ipinfo_from_enuseye
 """
 使用方式：
     python3 black_ip.py -A # 一次性获取所有的blackip
@@ -97,13 +97,14 @@ def get_ip_details_selenium(ip):
     """
     chrome_options = webdriver.ChromeOptions()  # 或者 chrome_options = Options()
     chrome_options.add_experimental_option('excludeSwitches', ['enable-automation'])  # 防止反爬
-    chrome_options.add_argument("--remote-debugging-port=9222")
+    chrome_options.add_argument('--disable-blink-features=AutomationControlled')  # 避免webdriver检测
+    chrome_options.add_argument("--remote-debugging-port=9222")  # 解决报错 WebDriverException: Message: unknown error: DevToolsActivePort file doesn't exist
     chrome_options.add_argument('--no-sandbox')  # 直接把sandbox禁用了，–-no-sandbox参数是让Chrome在root权限下跑
-    chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument('--disable-dev-shm-usage')  # 大量渲染时候写入/tmp而非/dev/shm
     chrome_options.add_argument('--headless')  # 无头模式，传递此参数浏览器不会显示界面，程序在后台运行
-    # chrome_options.add_argument('--proxy-server=http://127.0.0.1:10809')  # 利用v2ray配置代理
     chrome_options.add_argument('--disable-gpu')  # 禁用GPU加速
-    chrome_options.add_argument("user-agent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'")  # 使用这个设置可以避免网站检测到你使用的是无界模式进行反抓取
+    chrome_options.add_argument("user-agent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'")
+    # chrome_options.add_argument('--proxy-server=http://127.0.0.1:10809')  # 利用v2ray配置代理
 
     driver = webdriver.Chrome(options=chrome_options, service=Service('/usr/local/bin/chromedriver'))
     # driver.set_page_load_timeout(300)
@@ -114,10 +115,11 @@ def get_ip_details_selenium(ip):
     Latitude, Longitude = None, None
 
     url = "https://www.vedbex.com/geoip/%s" % ip
-    driver.get(url)
-    wait_obj = WebDriverWait(driver, 600)   # 创建显示等待对象, 设置等待条件
 
     try:
+        driver.get(url)
+        wait_obj = WebDriverWait(driver, 600)  # 创建显示等待对象, 设置等待条件
+
         driver.execute_script('window.scrollTo(0,document.body.scrollHeight)')  # 下滑鼠标，不可少，不然无法关闭广告弹窗
         wait_obj.until(expected_conditions.visibility_of_element_located(  # 判断Ip数据是否出现
             (By.XPATH, "//table[@class='table table-bordered']//tr[13]/td[2]")))
@@ -129,36 +131,37 @@ def get_ip_details_selenium(ip):
         suspondWindowHandler(driver)
         time.sleep(1)
 
-    tr_list = driver.find_elements(by=By.XPATH, value="//table[@class='table table-bordered']//tr")
-    for item in tr_list[1:]:
-        data_type = item.find_element(by=By.XPATH, value="./td[1]/b").text
-        data = item.find_element(by=By.XPATH, value="./td[2]").text
-        print("data_type:%s, data:%s" % (data_type, data))
+        tr_list = driver.find_elements(by=By.XPATH, value="//table[@class='table table-bordered']//tr")
+        for item in tr_list[1:]:
+            data_type = item.find_element(by=By.XPATH, value="./td[1]/b").text
+            data = item.find_element(by=By.XPATH, value="./td[2]").text
+            print("data_type:%s, data:%s" % (data_type, data))
 
-        if data_type == "ISP":
-            ISP = data
-        if data_type == "ISP Domain":
-            Domain = data
-        if data_type == "ISP Type":
-            ISP_Type = data
-        if data_type == "ASN":
-            ASN = data
-        if data_type == "CIDR":
-            CIDR = data
-        if data_type == "Country":
-            Country = data
-        if data_type == "Region":
-            Region = data
-        if data_type == "City":
-            City = data
-        if data_type == "Zip Code":
-            Zip_Code = data
-        if data_type == "Latitude":
-            Latitude = data
-        if data_type == "Longitude":
-            Longitude = data
+            if data_type == "ISP":
+                ISP = data
+            if data_type == "ISP Domain":
+                Domain = data
+            if data_type == "ISP Type":
+                ISP_Type = data
+            if data_type == "ASN":
+                ASN = data
+            if data_type == "CIDR":
+                CIDR = data
+            if data_type == "Country":
+                Country = data
+            if data_type == "Region":
+                Region = data
+            if data_type == "City":
+                City = data
+            if data_type == "Zip Code":
+                Zip_Code = data
+            if data_type == "Latitude":
+                Latitude = data
+            if data_type == "Longitude":
+                Longitude = data
+    finally:
+        driver.quit()
 
-    driver.close()
     print(ISP, Domain, ISP_Type, ASN, CIDR, Country, Region, City, Zip_Code, Latitude, Longitude)
     return ISP, Domain, ISP_Type, ASN, CIDR, Country, Region, City, Zip_Code, Latitude, Longitude
 
@@ -172,6 +175,7 @@ def insert(temp_list):
         # extra_info_dict = get_ipinfo_from_enuseye(ip)
         ISP, Domain, ISP_Type, ASN, CIDR, Country, Region, City, Zip_Code, Latitude, Longitude = get_ip_details_selenium(ip)
         if ISP:
+            extra_info_dict = get_ipinfo_from_enuseye(ip)
             data = {
                 "_id": ip,
                 "date": temp_list[2][:-1],
@@ -189,11 +193,11 @@ def insert(temp_list):
                 "Latitude": Latitude,
                 "Longitude": Longitude,
 
-                # "tags": extra_info_dict["tags"],
-                # "open_port": extra_info_dict["open_port"],
-                # "categories": extra_info_dict["categories"],
-                # "families": extra_info_dict["families"],
-                # "organizations": extra_info_dict["organizations"]
+                "tags": extra_info_dict["tags"],
+                "open_port": extra_info_dict["open_port"],
+                "categories": extra_info_dict["categories"],
+                "families": extra_info_dict["families"],
+                "organizations": extra_info_dict["organizations"]
             }
             print("insert data:%s" % data)
             mongo_collection.update_one(filter={"_id": ip}, update={'$set': data}, upsert=True)

@@ -48,10 +48,11 @@ def slider_verification_windows(url="https://www.venuseye.com.cn/ip/"):
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_experimental_option('excludeSwitches', ['enable-automation'])  # 防止反爬
     chrome_options.add_argument('--disable-blink-features=AutomationControlled')  # 避免webdriver检测
-    # chrome_options.add_argument('--headless')
-    chrome_options.add_argument(
-        "user-agent='Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.60 Mobile Safari/537.36'"
-    )  # 使用这个设置可以避免网站检测到你使用的是无界模式进行反抓取
+    chrome_options.add_argument('--no-sandbox')  # 直接把sandbox禁用了，–-no-sandbox参数是让Chrome在root权限下跑
+    chrome_options.add_argument('--disable-dev-shm-usage')  # 大量渲染时候写入/tmp而非/dev/shm
+    chrome_options.add_argument('--disable-gpu')  # 禁用GPU加速
+    chrome_options.add_argument('--headless')  # 无头模式，传递此参数浏览器不会显示界面，程序在后台运行
+    chrome_options.add_argument("user-agent='Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.60 Mobile Safari/537.36'")
     # chrome_options.add_argument('--proxy-server=http://127.0.0.1:10809')  # 利用v2ray配置代理
 
     driver = webdriver.Chrome(options=chrome_options)
@@ -70,10 +71,12 @@ def slider_verification_windows(url="https://www.venuseye.com.cn/ip/"):
             action = ActionChains(driver)  # 动作链
             action.click_and_hold(on_element=slider).perform()  # 点击并且不松开鼠标
             # action.move_by_offset(xoffset=293, yoffset=0).perform()  # 往右边移动258个位置，速度快易被反爬
-            tracks = get_track(293, random.choice([3]))
+            tracks = get_track(293, random.choice([2, 2.7, 1.5]))
+            n = 0
             for x in tracks:
-                action.move_by_offset(xoffset=x, yoffset=0).perform()  # 控制速率移动
-            time.sleep(0.5)
+                action.move_by_offset(xoffset=x, yoffset=n).perform()  # 控制速率移动
+                n += 1 + random.randint(1, 2)
+                time.sleep(0.2)
             action.pause(1).release().perform()  # 松开鼠标
 
             cookie = driver.get_cookies()
@@ -94,7 +97,7 @@ def slider_verification_windows(url="https://www.venuseye.com.cn/ip/"):
     except:
         print(traceback.print_exc())
     finally:
-        driver.close()
+        driver.quit()
 
 
 def get_ip_ioc(data):
@@ -136,7 +139,8 @@ def get_ipinfo_from_enuseye(clue):
     if status_code_ioc == 409:
         slider_verification_windows()
         time.sleep(1)
-        status_code, ioc_list = get_ip_ioc(data)
+        status_code_ioc, ioc_list = get_ip_ioc(data)
+    print("status_code_ioc:%s, ioc_list:%s" % (status_code_ioc, ioc_list))
 
     all_categories_list, all_families_list, all_organizations_list = [], [], []
     for ioc in ioc_list:
@@ -157,6 +161,7 @@ def get_ipinfo_from_enuseye(clue):
         slider_verification_windows()
         time.sleep(1)
         status_code, data = get_ip_info(data)
+    print("status_code:%s, data:%s" % (status_code, data))
 
     open_port_list = data.get("ports", [])
     tags_list = data.get("tags", [])
