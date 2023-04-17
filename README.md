@@ -17,7 +17,7 @@
 
 ## 容器使用
     docker pull 1162886013/selenium:1.0
-    docker run -d 1162886013/selenium:1.0 python3 linux_black_ip.py -A
+    docker run -d --init 1162886013/selenium:1.0 python3 linux_black_ip.py -A
     
 ## 存储数据示例
 ![image](https://github.com/leiwuhen92/blackips/blob/main/test/%E5%AD%98%E5%82%A8%E7%A4%BA%E4%BE%8B.png)
