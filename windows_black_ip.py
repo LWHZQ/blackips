@@ -231,31 +231,31 @@ def _setup_argparser():
 
 
 if __name__ == '__main__':
-    # args = _setup_argparser()
-    # if args.all:
-    #     print("get all black ips")
-    #     # 所有的Blacklist IP
-    #     full_blacklist_url = "https://myip.ms/files/blacklist/general/full_blacklist_database.zip"
-    #     urlretrieve(full_blacklist_url, "full_blacklist_database.zip", cbk)
-    #
-    #     unzip("full_blacklist_database.zip")
-    #     get_all_ip("full_blacklist_database.txt")
-    #
-    #     # 最新的10天的Blacklist IP
-    #     latest_blacklist_url = "https://myip.ms/files/blacklist/general/latest_blacklist.txt"
-    #     urlretrieve(latest_blacklist_url, "latest_blacklist.txt", cbk)
-    #     get_all_ip("latest_blacklist.txt")
-    # elif args.update:
-    #     print("update 10 day's black ips")
-    #     # 最新的10天的Blacklist IP
-    #     latest_blacklist_url = "https://myip.ms/files/blacklist/general/latest_blacklist.txt"
-    #     urlretrieve(latest_blacklist_url, "latest_blacklist.txt", cbk)
-    #     get_all_ip("latest_blacklist.txt")
-    # elif args.clear:
-    #     print("clear black ips")
-    #     mongo_collection.delete_many({})
+    args = _setup_argparser()
+    if args.all:
+        print("get all black ips")
+        # 所有的Blacklist IP
+        full_blacklist_url = "https://myip.ms/files/blacklist/general/full_blacklist_database.zip"
+        urlretrieve(full_blacklist_url, "full_blacklist_database.zip", cbk)
 
-    get_all_ip("full_blacklist_database.txt")
+        unzip("full_blacklist_database.zip")
+        get_all_ip("full_blacklist_database.txt")
+
+        # 最新的10天的Blacklist IP
+        latest_blacklist_url = "https://myip.ms/files/blacklist/general/latest_blacklist.txt"
+        urlretrieve(latest_blacklist_url, "latest_blacklist.txt", cbk)
+        get_all_ip("latest_blacklist.txt")
+    elif args.update:
+        print("update 10 day's black ips")
+        # 最新的10天的Blacklist IP
+        latest_blacklist_url = "https://myip.ms/files/blacklist/general/latest_blacklist.txt"
+        urlretrieve(latest_blacklist_url, "latest_blacklist.txt", cbk)
+        get_all_ip("latest_blacklist.txt")
+    elif args.clear:
+        print("clear black ips")
+        mongo_collection.delete_many({})
+
+    # get_all_ip("full_blacklist_database.txt")
     # get_ip_details("2.177.219.152")
 
 
