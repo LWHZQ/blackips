@@ -7,6 +7,7 @@ import traceback
 import requests
 requests.packages.urllib3.disable_warnings()
 from lxml import etree
+from pathlib import Path
 from urllib.request import urlretrieve
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -86,7 +87,23 @@ def suspondWindowHandler(browser):
         suspondWindow.click()
         print("advertisement is close")
     except Exception as e:
-        print("there is no advertisement or can not find element. e=%s" % e)
+        print("there is no advertisement or can not find element")
+
+
+def save_national_flag(browser, img_url):
+    print("img_url:%s" % img_url)
+    if img_url:
+        imag_path_dir = Path.cwd().joinpath(*["national_flag"])
+        imag_path_dir.mkdir(parents=True, exist_ok=True)
+        image_name = imag_path_dir.joinpath(*[Path(img_url).name])
+        if not image_name.exists():
+            # item.find_element(by=By.XPATH, value="./td[2]/img").screenshot(str(image_name))  # 图片会失真
+            try:
+                browser.get(img_url)
+                browser.find_element(by=By.XPATH, value="//img").screenshot(str(image_name))
+                print("save national flag ok")
+            except Exception as e:
+                print("save national flag fail, %s" % e)
 
 
 def get_ip_details_selenium(ip):
@@ -128,6 +145,7 @@ def get_ip_details_selenium(ip):
         suspondWindowHandler(driver)
         time.sleep(1)
 
+        img_url = None
         tr_list = driver.find_elements(by=By.XPATH, value="//table[@class='table table-bordered']//tr")
         for item in tr_list[1:]:
             data_type = item.find_element(by=By.XPATH, value="./td[1]/b").text
@@ -146,6 +164,8 @@ def get_ip_details_selenium(ip):
                 CIDR = data
             if data_type == "Country":
                 Country = data
+                if Country != "- (-)":
+                    img_url = item.find_element(by=By.XPATH, value="./td[2]/img").get_attribute('src')
             if data_type == "Region":
                 Region = data
             if data_type == "City":
@@ -156,6 +176,8 @@ def get_ip_details_selenium(ip):
                 Latitude = data
             if data_type == "Longitude":
                 Longitude = data
+
+        save_national_flag(driver, img_url)
     finally:
         driver.quit()
 
@@ -169,7 +191,6 @@ def insert(temp_list):
     check = mongo_collection.find_one({"_id": ip})
     print("check:%s" % check)
     if check is None:
-        # extra_info_dict = get_ipinfo_from_enuseye(ip)
         ISP, Domain, ISP_Type, ASN, CIDR, Country, Region, City, Zip_Code, Latitude, Longitude = get_ip_details_selenium(ip)
         if ISP:
             extra_info_dict = get_ipinfo_from_enuseye(ip)
@@ -182,8 +203,8 @@ def insert(temp_list):
                 "ISP_Type": ISP_Type,
                 "ASN": ASN,
                 "CIDR": CIDR,
-                # "Country": Country,
-                "countryID": country[temp_list[4][:-1]],
+                "Country": Country,
+                # "countryID": country[temp_list[4][:-1]],
                 "Region": Region,
                 "City": City,
                 "Zip_Code": Zip_Code,
