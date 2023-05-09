@@ -136,7 +136,7 @@ def get_ip_details_selenium(ip):
 
         driver.execute_script('window.scrollTo(0,document.body.scrollHeight)')  # 下滑鼠标，不可少，不然无法关闭广告弹窗
         wait_obj.until(expected_conditions.visibility_of_element_located(  # 判断Ip数据是否出现
-            (By.XPATH, "//table[@class='table table-bordered']//tr[13]/td[2]")))
+            (By.XPATH, "//table[@class='table table-bordered']//tr/td/b[text()='Longitude']")))
     except Exception as e:
         print("ip data not found, %s" % e)
     else:
