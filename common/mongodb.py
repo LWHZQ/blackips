@@ -1,4 +1,5 @@
 import pymongo
+from  config import mongo_ip, mongo_port, mongo_db
 
-mongo_client = pymongo.MongoClient(host="192.168.11.135", port=27017, connect=False)
-mongo_collection = mongo_client["podding"]["black_ip"]
+mongo_client = pymongo.MongoClient(host=mongo_ip, port=mongo_port, connect=False)
+mongo_collection = mongo_client[mongo_db]["black_ip"]
